@@ -37,7 +37,7 @@ export default function App() {
       setLoading(true);
       setResult("");
 
-      const response = await fetch("http://localhost:5000/api/generate", {
+      const response = await fetch("/api/generate", {
         method: "POST",
 
         headers: {
