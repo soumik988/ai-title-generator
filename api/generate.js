@@ -1,5 +1,6 @@
 export default async function handler(req, res) {
 
+  // ALLOW ONLY POST
   if (req.method !== "POST") {
     return res.status(405).json({
       message: "Method Not Allowed",
@@ -10,10 +11,18 @@ export default async function handler(req, res) {
 
     const { topic, tool } = req.body;
 
+    // VALIDATION
+    if (!topic || !tool) {
+      return res.status(400).json({
+        result: "Topic and tool are required",
+      });
+    }
+
     let prompt = "";
 
-    // CAPTION
+    // INSTAGRAM CAPTIONS
     if (tool === "caption") {
+
       prompt = `
 Generate 5 modern stylish Instagram captions.
 
@@ -28,10 +37,12 @@ Rules:
 - Do not add numbering
 - Separate each caption with one empty line
 `;
+
     }
 
-    // TITLE
-    if (tool === "title") {
+    // YOUTUBE TITLES
+    else if (tool === "title") {
+
       prompt = `
 Generate 5 viral YouTube titles.
 
@@ -46,10 +57,12 @@ Rules:
 - Do not add numbering
 - Separate each title with one empty line
 `;
+
     }
 
-    // HASHTAG
-    if (tool === "hashtag") {
+    // HASHTAGS
+    else if (tool === "hashtag") {
+
       prompt = `
 Generate 20 trending hashtags.
 
@@ -60,9 +73,10 @@ Rules:
 - Single line
 - No numbering
 `;
+
     }
 
-    // OPENROUTER API
+    // OPENROUTER API REQUEST
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
       {
@@ -72,10 +86,16 @@ Rules:
           "Content-Type": "application/json",
 
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+
+          "HTTP-Referer":
+            "https://ai-title-generator-ww71.vercel.app",
+
+          "X-Title": "AI Title Generator",
         },
 
         body: JSON.stringify({
-          model: "openai/gpt-3.5-turbo",
+
+          model: "openai/gpt-4o-mini",
 
           messages: [
             {
@@ -85,29 +105,41 @@ Rules:
           ],
 
           temperature: 0.9,
+
           max_tokens: 700,
+
         }),
       }
     );
 
+    // RESPONSE DATA
     const data = await response.json();
 
-    if (!data.choices || !data.choices[0]) {
+    console.log("OPENROUTER RESPONSE:", data);
+
+    // ERROR HANDLING
+    if (!response.ok) {
+
       return res.status(500).json({
-        result: "Failed to generate AI response",
+        result:
+          data?.error?.message ||
+          "Failed to generate AI response",
       });
+
     }
 
+    // SUCCESS RESPONSE
     return res.status(200).json({
       result: data.choices[0].message.content,
     });
 
   } catch (error) {
 
-    console.log(error);
+    console.log("SERVER ERROR:", error);
 
     return res.status(500).json({
       result: "Server Error",
     });
+
   }
 }
